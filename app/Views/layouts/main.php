@@ -3,88 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0F1F3D">
     <title><?= htmlspecialchars($title ?? 'BugTracker Pro') ?></title>
 
-    <!-- Bootstrap 5.3 CDN -->
+    <!-- Preconnect Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Inter — primary UI font; JetBrains Mono — code/key -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 CDN -->
+    <!-- Font Awesome 6 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <!-- CSS riêng của app -->
+    <!-- App design system -->
     <link href="<?= APP_URL ?>/public/css/app.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body>
 
 <!-- ════════════════════════════════════
      NAVBAR
 ════════════════════════════════════ -->
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background:#1E3A5F;">
-    <div class="container-fluid px-4">
+<nav class="navbar app-navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid px-4 d-flex align-items-center" style="height:var(--topbar-h);">
 
         <!-- Logo -->
-        <a class="navbar-brand fw-bold" href="<?= APP_URL ?>/dashboard">
-            <i class="fa-solid fa-bug me-2" style="color:#0078D4;"></i>BugTracker Pro
+        <a class="navbar-brand me-4" href="<?= APP_URL ?>/dashboard">
+            <span class="brand-icon"><i class="fa-solid fa-bug"></i></span>
+            BugTracker Pro
         </a>
 
-        <!-- Search toàn cục (Ctrl+K) -->
-        <div class="mx-auto d-none d-lg-block" style="width:380px;">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fa fa-search text-muted"></i>
-                </span>
-                <input type="text"
-                       id="globalSearch"
-                       class="form-control border-start-0"
-                       placeholder="Tìm kiếm issue, project... (Ctrl+K)"
-                       autocomplete="off">
-            </div>
-            <!-- Search results dropdown -->
+        <!-- Global search (Ctrl+K) -->
+        <div class="global-search d-none d-lg-block">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text"
+                   id="globalSearch"
+                   class="form-control"
+                   placeholder="Tìm kiếm issue, project..."
+                   autocomplete="off">
+            <span class="kbd">Ctrl K</span>
             <div id="searchResults"
-                 class="position-absolute bg-white border rounded shadow-sm mt-1 d-none"
-                 style="width:380px;z-index:9999;max-height:300px;overflow-y:auto;">
+                 class="position-absolute d-none"
+                 style="width:380px;z-index:9999;max-height:340px;overflow-y:auto;left:0;">
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3 ms-3">
+        <div class="d-flex align-items-center gap-2 ms-auto">
 
-            <!-- Nút tạo issue mới -->
+            <!-- Create button -->
             <div class="dropdown">
-                <button class="btn btn-sm btn-primary fw-bold dropdown-toggle"
+                <button class="btn btn-primary btn-sm dropdown-toggle d-inline-flex align-items-center gap-2"
                         data-bs-toggle="dropdown">
-                    <i class="fa fa-plus me-1"></i>Tạo mới
+                    <i class="fa fa-plus"></i>
+                    <span class="d-none d-md-inline">Tạo mới</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li class="dropdown-header">Tạo mới</li>
                     <li>
                         <a class="dropdown-item" href="<?= APP_URL ?>/projects/new">
-                            <i class="fa fa-folder-plus me-2 text-primary"></i>Dự án mới
+                            <i class="fa fa-folder-plus"></i>Dự án mới
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider my-1"></li>
                     <?php
-                    // Lấy project gần nhất để tạo issue nhanh
                     if (!empty($_SESSION['user_id'])) {
                         try {
-                            $navProjModel   = new ProjectModel();
-                            $navProjects    = $navProjModel->getByUser($_SESSION['user_id']);
-                            foreach (array_slice($navProjects, 0, 4) as $np):
+                            $navProjModel = new ProjectModel();
+                            $navProjects  = $navProjModel->getByUser($_SESSION['user_id']);
+                            if (!empty($navProjects)) {
+                                echo '<li><hr class="dropdown-divider"></li>';
+                                echo '<li class="dropdown-header">Issue trong dự án</li>';
+                                foreach (array_slice($navProjects, 0, 4) as $np):
                     ?>
                     <li>
                         <a class="dropdown-item"
                            href="<?= APP_URL ?>/projects/<?= htmlspecialchars(strtolower($np['key'])) ?>/issues/new">
-                            <i class="fa fa-bug me-2 text-danger"></i>
-                            Issue trong <strong><?= htmlspecialchars($np['key']) ?></strong>
+                            <i class="fa fa-bug"></i>
+                            <span><?= htmlspecialchars($np['name']) ?></span>
+                            <span class="ms-auto issue-key-tag" style="font-size:10px;">
+                                <?= htmlspecialchars($np['key']) ?>
+                            </span>
                         </a>
                     </li>
                     <?php
-                            endforeach;
-                            if (empty($navProjects)):
-                    ?>
-                    <li>
-                        <span class="dropdown-item text-muted" style="font-size:13px;">
-                            Tạo dự án trước để thêm issue
-                        </span>
-                    </li>
-                    <?php
-                            endif;
+                                endforeach;
+                            }
                         } catch (Exception $e) { /* DB chưa sẵn sàng */ }
                     }
                     ?>
@@ -93,10 +95,11 @@
 
             <!-- Notification bell -->
             <div class="dropdown">
-                <button class="btn btn-link text-white position-relative p-1"
+                <button class="nav-icon-btn"
                         data-bs-toggle="dropdown"
-                        title="Thông báo">
-                    <i class="fa fa-bell fa-lg"></i>
+                        title="Thông báo"
+                        aria-label="Thông báo">
+                    <i class="fa fa-bell"></i>
                     <?php
                     $navUnread = 0;
                     if (!empty($_SESSION['user_id'])) {
@@ -107,27 +110,18 @@
                     }
                     if ($navUnread > 0):
                     ?>
-                    <span class="position-absolute top-0 start-100 translate-middle
-                                 badge rounded-pill bg-danger"
-                          style="font-size:10px;">
-                        <?= $navUnread > 99 ? '99+' : $navUnread ?>
-                    </span>
+                    <span class="nav-badge"><?= $navUnread > 99 ? '99+' : $navUnread ?></span>
                     <?php endif; ?>
                 </button>
 
-                <div class="dropdown-menu dropdown-menu-end shadow p-0"
-                     style="width:340px;max-height:420px;overflow-y:auto;">
-                    <div class="dropdown-header d-flex justify-content-between align-items-center
-                                py-2 px-3"
-                         style="background:#F5F8FC;border-bottom:1px solid #E0E7EF;">
-                        <span class="fw-bold" style="font-size:13px;">
-                            <i class="fa fa-bell me-1 text-primary"></i>Thông báo
-                        </span>
+                <div class="dropdown-menu dropdown-menu-end notif-dropdown">
+                    <div class="notif-header">
+                        <span><i class="fa fa-bell me-2"></i>Thông báo</span>
                         <?php if ($navUnread > 0): ?>
                         <a href="<?= APP_URL ?>/notifications/read-all"
-                           class="text-primary text-decoration-none"
-                           style="font-size:12px;">
-                            Đánh dấu tất cả đã đọc
+                           class="text-decoration-none"
+                           style="font-size:12px;color:var(--brand);font-weight:500;">
+                            Đánh dấu đã đọc
                         </a>
                         <?php endif; ?>
                     </div>
@@ -141,24 +135,22 @@
                                 $isUnread = !$notif['is_read'];
                     ?>
                     <a href="<?= $notif['link'] ? APP_URL . htmlspecialchars($notif['link']) : '#' ?>"
-                       class="dropdown-item py-2 px-3 border-bottom"
-                       style="<?= $isUnread ? 'background:#EEF4FB;' : '' ?>white-space:normal;">
+                       class="notif-item <?= $isUnread ? 'unread' : '' ?>">
                         <div class="d-flex gap-2 align-items-start">
                             <div style="width:8px;height:8px;border-radius:50%;
-                                        background:<?= $isUnread ? '#0078D4' : 'transparent' ?>;
-                                        margin-top:5px;flex-shrink:0;">
-                            </div>
-                            <div>
-                                <div style="font-size:13px;font-weight:<?= $isUnread ? '600':'400' ?>;">
+                                        background:<?= $isUnread ? 'var(--brand)' : 'transparent' ?>;
+                                        margin-top:6px;flex-shrink:0;"></div>
+                            <div style="min-width:0;flex:1;">
+                                <div style="font-size:13px;font-weight:<?= $isUnread ? '600':'500' ?>;color:var(--text-primary);">
                                     <?= htmlspecialchars($notif['title']) ?>
                                 </div>
                                 <?php if (!empty($notif['message'])): ?>
-                                <div class="text-muted" style="font-size:12px;">
-                                    <?= htmlspecialchars(mb_substr($notif['message'], 0, 60)) ?>
-                                    <?= mb_strlen($notif['message']) > 60 ? '...' : '' ?>
+                                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;line-height:1.5;">
+                                    <?= htmlspecialchars(mb_substr($notif['message'], 0, 70)) ?>
+                                    <?= mb_strlen($notif['message']) > 70 ? '...' : '' ?>
                                 </div>
                                 <?php endif; ?>
-                                <div class="text-muted" style="font-size:11px;margin-top:2px;">
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
                                     <i class="fa fa-clock me-1"></i>
                                     <?= function_exists('timeAgo') ? timeAgo($notif['created_at']) : $notif['created_at'] ?>
                                 </div>
@@ -169,23 +161,23 @@
                                 endforeach;
                             else:
                     ?>
-                    <div class="text-center text-muted py-4" style="font-size:13px;">
-                        <i class="fa fa-bell-slash fa-2x d-block mb-2 opacity-50"></i>
+                    <div class="text-center py-5" style="color:var(--text-muted);font-size:13px;">
+                        <i class="fa fa-bell-slash d-block mb-2" style="font-size:24px;opacity:.4;"></i>
                         Chưa có thông báo nào
                     </div>
                     <?php
                             endif;
                         } catch (Exception $e) {
                     ?>
-                    <div class="text-center text-muted py-3" style="font-size:13px;">
+                    <div class="text-center py-4" style="color:var(--text-muted);font-size:13px;">
                         Chưa có thông báo
                     </div>
                     <?php } } ?>
 
-                    <div style="background:#F5F8FC;border-top:1px solid #E0E7EF;">
+                    <div class="notif-footer">
                         <a href="<?= APP_URL ?>/notifications"
-                           class="dropdown-item text-center text-primary py-2"
-                           style="font-size:13px;">
+                           class="text-decoration-none"
+                           style="color:var(--brand);font-weight:500;">
                             Xem tất cả thông báo →
                         </a>
                     </div>
@@ -194,8 +186,7 @@
 
             <!-- Avatar + user menu -->
             <div class="dropdown">
-                <button class="btn btn-link p-0 d-flex align-items-center gap-2"
-                        data-bs-toggle="dropdown">
+                <button class="nav-avatar-btn" data-bs-toggle="dropdown" aria-label="User menu">
                     <?php
                     $navAvatar = $_SESSION['user_avatar'] ?? null;
                     $navName   = $_SESSION['user_name']   ?? 'User';
@@ -203,75 +194,59 @@
                     if ($navAvatar):
                     ?>
                     <img src="<?= APP_URL ?>/uploads/<?= htmlspecialchars($navAvatar) ?>"
-                         class="rounded-circle border border-secondary"
-                         width="34" height="34"
-                         style="object-fit:cover;"
+                         class="avatar"
                          alt="<?= htmlspecialchars($navName) ?>">
                     <?php else: ?>
-                    <!-- Avatar chữ cái đầu nếu chưa có ảnh -->
-                    <div class="rounded-circle d-flex align-items-center justify-content-center
-                                border border-secondary fw-bold"
-                         style="width:34px;height:34px;background:#0078D4;
-                                color:#fff;font-size:14px;flex-shrink:0;">
-                        <?= $navInitial ?>
-                    </div>
+                    <div class="avatar avatar-fallback"><?= $navInitial ?></div>
                     <?php endif; ?>
                 </button>
 
-                <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width:220px;">
-                    <!-- User info -->
-                    <li class="px-3 py-2"
-                        style="background:#F5F8FC;border-bottom:1px solid #E0E7EF;">
-                        <div class="d-flex align-items-center gap-2">
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width:240px;">
+                    <li class="px-2 py-2">
+                        <div class="d-flex align-items-center gap-2 px-1 py-1">
                             <?php if ($navAvatar): ?>
                             <img src="<?= APP_URL ?>/uploads/<?= htmlspecialchars($navAvatar) ?>"
-                                 class="rounded-circle"
-                                 width="36" height="36"
-                                 style="object-fit:cover;" alt="">
+                                 class="avatar-md" alt="">
                             <?php else: ?>
-                            <div class="rounded-circle d-flex align-items-center
-                                        justify-content-center fw-bold"
-                                 style="width:36px;height:36px;background:#0078D4;
-                                        color:#fff;font-size:14px;flex-shrink:0;">
-                                <?= $navInitial ?>
-                            </div>
+                            <div class="avatar-md avatar-fallback"><?= $navInitial ?></div>
                             <?php endif; ?>
-                            <div>
-                                <div class="fw-bold" style="font-size:13px;">
+                            <div style="min-width:0;flex:1;">
+                                <div style="font-weight:600;font-size:13px;color:var(--text-primary);">
                                     <?= htmlspecialchars($navName) ?>
                                 </div>
-                                <div class="text-muted" style="font-size:12px;">
+                                <div style="font-size:12px;color:var(--text-muted);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
                                     <?= htmlspecialchars($_SESSION['user_email'] ?? '') ?>
                                 </div>
                             </div>
                         </div>
                     </li>
-                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><hr class="dropdown-divider"></li>
 
                     <li>
                         <a class="dropdown-item" href="<?= APP_URL ?>/profile">
-                            <i class="fa fa-user me-2 text-muted"></i>Hồ sơ cá nhân
+                            <i class="fa fa-user"></i>Hồ sơ cá nhân
                         </a>
                     </li>
                     <li>
                         <a class="dropdown-item" href="<?= APP_URL ?>/settings">
-                            <i class="fa fa-gear me-2 text-muted"></i>Cài đặt
+                            <i class="fa fa-gear"></i>Cài đặt
                         </a>
                     </li>
 
                     <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
-                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item" href="<?= APP_URL ?>/admin">
-                            <i class="fa fa-shield me-2 text-warning"></i>Quản trị hệ thống
+                            <i class="fa fa-shield-halved" style="color:var(--warning) !important;"></i>
+                            Quản trị hệ thống
                         </a>
                     </li>
                     <?php endif; ?>
 
-                    <li><hr class="dropdown-divider my-1"></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger" href="<?= APP_URL ?>/logout">
-                            <i class="fa fa-right-from-bracket me-2"></i>Đăng xuất
+                            <i class="fa fa-right-from-bracket"></i>Đăng xuất
                         </a>
                     </li>
                 </ul>
@@ -284,78 +259,71 @@
 <!-- ════════════════════════════════════
      SIDEBAR + CONTENT
 ════════════════════════════════════ -->
-<div class="d-flex" style="min-height:calc(100vh - 56px);">
+<div class="d-flex" style="min-height:calc(100vh - var(--topbar-h));">
 
     <!-- Sidebar -->
-    <aside class="d-none d-lg-flex flex-column flex-shrink-0 p-3"
-           style="width:220px;background:#fff;border-right:1px solid #dee2e6;
-                  position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;">
+    <aside class="app-sidebar d-none d-lg-flex">
 
-        <!-- Menu chính -->
-        <ul class="nav nav-pills flex-column gap-1">
+        <!-- Main nav -->
+        <ul class="nav nav-pills flex-column">
+            <?php
+            $reqUri = $_SERVER['REQUEST_URI'] ?? '';
+            $isDashboard = str_contains($reqUri, '/dashboard');
+            $isProjects  = str_contains($reqUri, '/projects') && !str_contains($reqUri, '/issues');
+            $isIssues    = str_contains($reqUri, '/issues');
+            $isReports   = str_contains($reqUri, '/reports');
+            $isNotifs    = str_contains($reqUri, '/notifications');
+            ?>
             <li class="nav-item">
-                <a href="<?= APP_URL ?>/dashboard"
-                   class="nav-link <?= str_contains($_SERVER['REQUEST_URI'], '/dashboard') ? 'active' : 'text-dark' ?>">
-                    <i class="fa fa-gauge me-2"></i>Dashboard
+                <a href="<?= APP_URL ?>/dashboard" class="nav-link <?= $isDashboard ? 'active' : '' ?>">
+                    <i class="fa fa-gauge-high"></i>Dashboard
                 </a>
             </li>
             <li class="nav-item">
-                <a href="<?= APP_URL ?>/projects"
-                   class="nav-link <?= (str_contains($_SERVER['REQUEST_URI'], '/projects')
-                                    && !str_contains($_SERVER['REQUEST_URI'], '/issues'))
-                                    ? 'active' : 'text-dark' ?>">
-                    <i class="fa fa-folder me-2"></i>Dự án
+                <a href="<?= APP_URL ?>/projects" class="nav-link <?= $isProjects ? 'active' : '' ?>">
+                    <i class="fa fa-folder"></i>Dự án
                 </a>
             </li>
             <li class="nav-item">
-                <a href="<?= APP_URL ?>/reports"
-                   class="nav-link <?= str_contains($_SERVER['REQUEST_URI'], '/reports') ? 'active' : 'text-dark' ?>">
-                    <i class="fa fa-chart-bar me-2"></i>Báo cáo
+                <a href="<?= APP_URL ?>/notifications" class="nav-link <?= $isNotifs ? 'active' : '' ?>">
+                    <i class="fa fa-bell"></i>Thông báo
+                    <?php if (!empty($navUnread) && $navUnread > 0): ?>
+                    <span class="sidebar-pill-count"><?= $navUnread > 99 ? '99+' : $navUnread ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<?= APP_URL ?>/reports" class="nav-link <?= $isReports ? 'active' : '' ?>">
+                    <i class="fa fa-chart-line"></i>Báo cáo
                 </a>
             </li>
         </ul>
 
-        <hr class="my-2">
-
-        <!-- Dự án gần đây từ DB -->
-        <p class="text-muted small px-2 mb-1 fw-semibold"
-           style="font-size:11px;letter-spacing:.5px;">
-            DỰ ÁN GẦN ĐÂY
-        </p>
-        <ul class="nav nav-pills flex-column gap-1">
+        <!-- Recent projects -->
+        <div class="sidebar-section">Dự án gần đây</div>
+        <ul class="nav nav-pills flex-column">
             <?php
             if (!empty($_SESSION['user_id'])) {
                 try {
                     $sidebarProjModel = new ProjectModel();
                     $sidebarProjects  = $sidebarProjModel->getByUser($_SESSION['user_id']);
-                    $currentUri       = $_SERVER['REQUEST_URI'] ?? '';
 
                     if (!empty($sidebarProjects)) {
                         foreach (array_slice($sidebarProjects, 0, 6) as $sp):
                             $spKey      = strtolower($sp['key']);
-                            $isActive   = str_contains($currentUri, '/projects/' . $spKey);
+                            $isActive   = str_contains($reqUri, '/projects/' . $spKey);
                             $openCount  = $sp['open_bugs'] ?? 0;
                 ?>
                 <li>
                     <a href="<?= APP_URL ?>/projects/<?= htmlspecialchars($spKey) ?>"
-                       class="nav-link <?= $isActive ? 'active' : 'text-dark' ?> text-truncate
-                              d-flex justify-content-between align-items-center"
-                       style="font-size:13px;padding:.35rem .75rem;"
+                       class="nav-link <?= $isActive ? 'active' : '' ?>"
                        title="<?= htmlspecialchars($sp['name']) ?>">
-                        <span>
-                            <i class="fa fa-circle-dot me-2"
-                               style="color:<?= $isActive ? '#fff' : '#0078D4' ?>;
-                                      font-size:10px;"></i>
-                            <?= htmlspecialchars(mb_substr($sp['name'], 0, 18)) ?>
-                            <?= mb_strlen($sp['name']) > 18 ? '...' : '' ?>
+                        <span class="sidebar-project-dot"></span>
+                        <span class="text-truncate" style="flex:1;min-width:0;">
+                            <?= htmlspecialchars($sp['name']) ?>
                         </span>
                         <?php if ($openCount > 0): ?>
-                        <span class="badge rounded-pill"
-                              style="background:<?= $isActive ? 'rgba(255,255,255,.3)' : '#E3F2FD' ?>;
-                                     color:<?= $isActive ? '#fff' : '#0078D4' ?>;
-                                     font-size:10px;">
-                            <?= $openCount ?>
-                        </span>
+                        <span class="sidebar-pill-count"><?= $openCount ?></span>
                         <?php endif; ?>
                     </a>
                 </li>
@@ -365,51 +333,39 @@
                 ?>
                 <li>
                     <a href="<?= APP_URL ?>/projects/new"
-                       class="nav-link text-muted"
-                       style="font-size:13px;padding:.35rem .75rem;">
-                        <i class="fa fa-plus me-2" style="font-size:10px;"></i>
-                        Tạo dự án mới
+                       class="nav-link"
+                       style="font-size:12.5px;color:var(--text-muted);">
+                        <i class="fa fa-plus"></i>Tạo dự án mới
                     </a>
                 </li>
                 <?php
                     }
                 } catch (Exception $e) {
-                    // DB chưa sẵn sàng hoặc lỗi khác — không crash layout
                 ?>
                 <li>
-                    <span class="nav-link text-muted" style="font-size:12px;">
+                    <span class="nav-link" style="font-size:12px;color:var(--text-muted);">
                         Chưa có dự án
                     </span>
                 </li>
                 <?php } }  ?>
         </ul>
 
-        <!-- Spacer + footer sidebar -->
-        <div class="mt-auto pt-3 border-top">
-            <a href="<?= APP_URL ?>/profile"
-               class="d-flex align-items-center gap-2 text-decoration-none text-muted p-2
-                      rounded hover-bg"
-               style="font-size:12px;transition:.15s;"
-               onmouseover="this.style.background='#F5F8FC'"
-               onmouseout="this.style.background='transparent'">
+        <!-- Sidebar footer profile -->
+        <div class="sidebar-footer">
+            <a href="<?= APP_URL ?>/profile" class="sidebar-profile">
                 <?php if (!empty($_SESSION['user_avatar'])): ?>
                 <img src="<?= APP_URL ?>/uploads/<?= htmlspecialchars($_SESSION['user_avatar']) ?>"
-                     class="rounded-circle"
-                     width="28" height="28"
-                     style="object-fit:cover;" alt="">
+                     class="avatar-sm" alt="">
                 <?php else: ?>
-                <div class="rounded-circle d-flex align-items-center justify-content-center
-                            fw-bold flex-shrink-0"
-                     style="width:28px;height:28px;background:#E3F2FD;
-                            color:#0078D4;font-size:12px;">
+                <div class="avatar-sm avatar-fallback" style="font-size:10px;">
                     <?= mb_strtoupper(mb_substr($_SESSION['user_name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <?php endif; ?>
-                <div class="text-truncate">
-                    <div class="fw-semibold text-dark" style="font-size:12px;line-height:1.2;">
-                        <?= htmlspecialchars(mb_substr($_SESSION['user_name'] ?? '', 0, 20)) ?>
+                <div style="min-width:0;flex:1;">
+                    <div style="font-size:12.5px;font-weight:600;color:var(--text-primary);line-height:1.2;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
+                        <?= htmlspecialchars(mb_substr($_SESSION['user_name'] ?? '', 0, 24)) ?>
                     </div>
-                    <div style="font-size:11px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:capitalize;">
                         <?= htmlspecialchars($_SESSION['user_role'] ?? '') ?>
                     </div>
                 </div>
@@ -418,7 +374,7 @@
     </aside>
 
     <!-- Main content area -->
-    <main class="flex-grow-1 p-4" style="min-width:0;">
+    <main class="app-main">
 
         <!-- Flash message -->
         <?php if (!empty($_SESSION['flash'])): ?>
@@ -426,17 +382,17 @@
                     alert-dismissible fade show mb-3"
              role="alert">
             <i class="fa <?= match($_SESSION['flash']['type']) {
-                'success' => 'fa-check-circle',
-                'danger'  => 'fa-times-circle',
-                'warning' => 'fa-exclamation-triangle',
-                default   => 'fa-info-circle',
-            } ?> me-2"></i>
-            <?= $_SESSION['flash']['message'] /* HTML được phép — đã sanitize ở controller */ ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                'success' => 'fa-circle-check',
+                'danger'  => 'fa-circle-xmark',
+                'warning' => 'fa-triangle-exclamation',
+                default   => 'fa-circle-info',
+            } ?>"></i>
+            <span style="flex:1;"><?= $_SESSION['flash']['message'] ?></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         <?php unset($_SESSION['flash']); endif; ?>
 
-        <!-- Nội dung view -->
+        <!-- View content -->
         <?= $content ?? '' ?>
     </main>
 </div>
@@ -447,7 +403,7 @@
 <script src="<?= APP_URL ?>/public/js/app.js"></script>
 
 <script>
-// ── Global Search Ctrl+K ──
+// Global Search Ctrl+K
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -456,7 +412,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ── Đóng search khi click ra ngoài ──
+// Close search dropdown when clicking outside
 document.addEventListener('click', function(e) {
     const results = document.getElementById('searchResults');
     if (results && !e.target.closest('#globalSearch') && !e.target.closest('#searchResults')) {
@@ -464,12 +420,12 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ── Auto-hide flash sau 4 giây ──
+// Auto-hide flash after 4 seconds
 document.querySelectorAll('.alert').forEach(function(el) {
     setTimeout(function() {
         el.classList.remove('show');
         setTimeout(() => el.remove(), 300);
-    }, 4000);
+    }, 4500);
 });
 </script>
 
