@@ -2,143 +2,148 @@
 /** @var array  $projects */
 /** @var string $title    */
 $projects = $projects ?? [];
+$canCreate = in_array($_SESSION['user_role'] ?? '', ['admin','manager']);
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-0">
-            <i class="fa fa-folder me-2 text-primary"></i>Dự Án Của Tôi
-        </h4>
-        <small class="text-muted">Tất cả dự án bạn đang tham gia</small>
+        <h1 class="page-title">Dự án của tôi</h1>
+        <p class="page-subtitle">Tất cả dự án bạn đang tham gia · <?= count($projects) ?> dự án</p>
     </div>
-    <?php if (in_array($_SESSION['user_role'] ?? '', ['admin','manager'])): ?>
-    <a href="<?= APP_URL ?>/projects/new" class="btn btn-primary fw-bold">
-        <i class="fa fa-plus me-1"></i>Tạo Dự Án Mới
+    <?php if ($canCreate): ?>
+    <a href="<?= APP_URL ?>/projects/new" class="btn btn-primary">
+        <i class="fa fa-plus"></i>Tạo dự án mới
     </a>
     <?php endif; ?>
 </div>
 
 <?php if (empty($projects)): ?>
 <!-- Empty state -->
-<div class="card text-center py-5">
-    <div class="py-3">
-        <i class="fa fa-folder-open fa-3x text-muted mb-3 d-block"></i>
-        <h5 class="text-muted">Bạn chưa tham gia dự án nào</h5>
-        <p class="text-muted mb-4">Tạo dự án mới hoặc chờ được mời vào dự án của team</p>
-        <?php if (in_array($_SESSION['user_role'] ?? '', ['admin','manager'])): ?>
-        <a href="<?= APP_URL ?>/projects/new" class="btn btn-primary px-4">
-            <i class="fa fa-plus me-2"></i>Tạo Dự Án Đầu Tiên
-        </a>
-        <?php endif; ?>
+<div class="card text-center" style="padding:64px 24px;">
+    <div style="width:64px;height:64px;border-radius:14px;background:var(--brand-50);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+        <i class="fa fa-folder-open" style="font-size:24px;"></i>
     </div>
+    <h5 style="color:var(--text-primary);font-weight:600;margin-bottom:6px;">Bạn chưa tham gia dự án nào</h5>
+    <p style="color:var(--text-secondary);font-size:13.5px;margin-bottom:22px;">Tạo dự án mới hoặc chờ được mời vào dự án của team</p>
+    <?php if ($canCreate): ?>
+    <a href="<?= APP_URL ?>/projects/new" class="btn btn-primary mx-auto" style="max-width:240px;">
+        <i class="fa fa-plus"></i>Tạo dự án đầu tiên
+    </a>
+    <?php endif; ?>
 </div>
 
 <?php else: ?>
-<!-- Grid dự án -->
+<!-- Project grid -->
 <div class="row g-3">
     <?php foreach ($projects as $proj): ?>
     <?php
-    $statusColor = match($proj['status'] ?? 'active') {
-        'active'   => '#28A745',
-        'archived' => '#6C757D',
-        'closed'   => '#DC3545',
-        default    => '#0078D4',
-    };
+    $statusMap = [
+        'active'   => ['var(--success)', 'var(--success-50)', 'Active'],
+        'archived' => ['var(--text-muted)', 'var(--bg-subtle)', 'Archived'],
+        'closed'   => ['var(--danger)', 'var(--danger-50)', 'Closed'],
+    ];
+    [$statusColor, $statusBg, $statusLabel] = $statusMap[$proj['status'] ?? 'active'] ?? ['var(--brand)', 'var(--brand-50)', 'Active'];
     $visIcon = match($proj['visibility'] ?? 'private') {
         'public'    => 'fa-globe',
         'team_only' => 'fa-users',
         default     => 'fa-lock',
     };
+    $visLabel = match($proj['visibility'] ?? 'private') {
+        'public'    => 'Công khai',
+        'team_only' => 'Team',
+        default     => 'Riêng tư',
+    };
     ?>
     <div class="col-md-6 col-lg-4">
-        <div class="card h-100 project-card"
-             style="border-top:3px solid <?= $statusColor ?>;
-                    transition:.2s;cursor:pointer;"
-             onclick="window.location='<?= APP_URL ?>/projects/<?= e(strtolower($proj['key'])) ?>'">
-            <div class="card-body p-3">
+        <a href="<?= APP_URL ?>/projects/<?= e(strtolower($proj['key'])) ?>"
+           class="card project-card h-100 text-decoration-none">
+            <div class="card-body" style="padding:20px;">
 
-                <!-- Header card -->
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="d-flex align-items-center gap-2">
-                        <!-- Avatar project (chữ cái đầu) -->
-                        <div style="width:40px;height:40px;border-radius:8px;
-                                    background:<?= $statusColor ?>22;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-weight:800;color:<?= $statusColor ?>;font-size:14px;">
+                <!-- Card header -->
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center gap-3" style="min-width:0;">
+                        <div class="project-avatar" style="background:var(--brand-50);color:var(--brand);">
                             <?= mb_strtoupper(mb_substr($proj['name'], 0, 2)) ?>
                         </div>
-                        <div>
-                            <div class="fw-bold" style="font-size:14px;color:#1A2332;">
+                        <div style="min-width:0;">
+                            <div style="font-weight:600;font-size:14px;color:var(--text-primary);text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">
                                 <?= e($proj['name']) ?>
                             </div>
-                            <span style="font-family:monospace;font-size:11px;
-                                         color:#6B7A8F;background:#F5F7FA;
-                                         padding:1px 6px;border-radius:4px;">
+                            <span class="issue-key-tag" style="margin-top:2px;display:inline-block;">
                                 <?= e($proj['key']) ?>
                             </span>
                         </div>
                     </div>
-                    <i class="fa <?= $visIcon ?> text-muted" style="font-size:12px;"
-                       title="<?= e($proj['visibility'] ?? 'private') ?>"></i>
+                    <span class="text-muted" title="<?= e($visLabel) ?>" style="font-size:12px;">
+                        <i class="fa <?= $visIcon ?>"></i>
+                    </span>
                 </div>
 
-                <!-- Mô tả -->
+                <!-- Description -->
                 <?php if (!empty($proj['description'])): ?>
-                <p class="text-muted mb-2" style="font-size:12px;line-height:1.5;">
-                    <?= e(truncate($proj['description'], 80)) ?>
+                <p style="font-size:13px;color:var(--text-secondary);line-height:1.55;margin-bottom:16px;min-height:40px;">
+                    <?= e(truncate($proj['description'], 90)) ?>
+                </p>
+                <?php else: ?>
+                <p style="font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:16px;min-height:40px;">
+                    Chưa có mô tả
                 </p>
                 <?php endif; ?>
 
-                <!-- Stats -->
-                <div class="d-flex gap-3 mt-2 pt-2"
-                     style="border-top:1px solid #F0F4F8;font-size:12px;">
-                    <span class="text-muted">
-                        <i class="fa fa-circle-dot me-1" style="color:#0078D4;"></i>
-                        <strong><?= $proj['open_bugs'] ?? 0 ?></strong> open
+                <!-- Stats row -->
+                <div class="d-flex align-items-center gap-3 pt-3" style="border-top:1px solid var(--border-subtle);font-size:12.5px;color:var(--text-secondary);">
+                    <span class="d-flex align-items-center gap-1">
+                        <i class="fa fa-circle-dot" style="color:var(--brand);font-size:10px;"></i>
+                        <strong style="color:var(--text-primary);"><?= $proj['open_bugs'] ?? 0 ?></strong>
+                        <span style="color:var(--text-muted);">open</span>
                     </span>
-                    <span class="text-muted">
-                        <i class="fa fa-users me-1"></i>
-                        <strong><?= $proj['member_count'] ?? 0 ?></strong> thành viên
+                    <span class="d-flex align-items-center gap-1">
+                        <i class="fa fa-users" style="color:var(--text-muted);font-size:10px;"></i>
+                        <strong style="color:var(--text-primary);"><?= $proj['member_count'] ?? 0 ?></strong>
                     </span>
-                    <span class="text-muted ms-auto">
-                        <i class="fa fa-clock me-1"></i>
+                    <span class="ms-auto" style="color:var(--text-muted);font-size:11.5px;">
                         <?= timeAgo($proj['created_at']) ?>
                     </span>
                 </div>
             </div>
 
-            <!-- Footer card -->
-            <div class="card-footer bg-transparent px-3 py-2"
-                 style="border-top:1px solid #F0F4F8;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="badge"
-                          style="background:<?= $statusColor ?>22;
-                                 color:<?= $statusColor ?>;font-size:11px;">
-                        <?= ucfirst($proj['status'] ?? 'active') ?>
-                    </span>
-                    <a href="<?= APP_URL ?>/projects/<?= e(strtolower($proj['key'])) ?>"
-                       class="btn btn-sm btn-outline-primary"
-                       style="font-size:11px;padding:2px 10px;"
-                       onclick="event.stopPropagation()">
-                        Xem Issues →
-                    </a>
-                </div>
+            <!-- Card footer -->
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <span class="badge" style="background:<?= $statusBg ?>;color:<?= $statusColor ?>;border-color:<?= $statusColor ?>33;">
+                    <?= $statusLabel ?>
+                </span>
+                <span style="font-size:12px;color:var(--brand);font-weight:500;">
+                    Xem issues <i class="fa fa-arrow-right" style="font-size:10px;margin-left:4px;"></i>
+                </span>
             </div>
-        </div>
+        </a>
     </div>
     <?php endforeach; ?>
 </div>
-
-<!-- Total count -->
-<p class="text-muted mt-3 mb-0" style="font-size:13px;">
-    <i class="fa fa-info-circle me-1"></i>
-    Tổng cộng <?= count($projects) ?> dự án
-</p>
 <?php endif; ?>
 
 <style>
+.project-card {
+    color: inherit;
+    transition: all .15s var(--ease);
+    cursor: pointer;
+}
 .project-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 24px rgba(0,120,212,.12);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+    color: inherit;
+}
+.project-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    letter-spacing: -0.01em;
 }
 </style>
